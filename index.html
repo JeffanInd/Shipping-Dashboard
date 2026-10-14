@@ -428,6 +428,87 @@
         border: 1px solid #86efac !important;
         font-weight: 700 !important;
       }
+
+
+      .pagination-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        flex-wrap: wrap;
+        padding: 16px 2px 4px;
+        margin-top: 12px;
+        border-top: 1px solid #e5e7eb
+      }
+
+      .page-size-control {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #475569;
+        font-size: 13px
+      }
+
+      .page-size-control select {
+        border: 1px solid #cbd5e1;
+        border-radius: 7px;
+        padding: 7px 10px;
+        background: #fff;
+        color: #0f172a;
+        font: inherit
+      }
+
+      .pagination-info {
+        font-size: 13px;
+        color: #64748b
+      }
+
+      .pagination-buttons {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap
+      }
+
+      .page-btn {
+        border: 1px solid #cbd5e1;
+        background: #fff;
+        color: #334155;
+        border-radius: 7px;
+        min-width: 36px;
+        height: 34px;
+        padding: 0 10px;
+        cursor: pointer;
+        font: inherit;
+        font-size: 13px
+      }
+
+      .page-btn:hover:not(:disabled) {
+        background: #eff6ff;
+        border-color: #60a5fa
+      }
+
+      .page-btn.active {
+        background: #1677e8;
+        color: #fff;
+        border-color: #1677e8
+      }
+
+      .page-btn:disabled {
+        opacity: .4;
+        cursor: not-allowed
+      }
+
+      @media(max-width:700px) {
+        .pagination-bar {
+          align-items: flex-start;
+          flex-direction: column
+        }
+
+        .pagination-buttons {
+          width: 100%
+        }
+      }
     </style>
   </head>
 
@@ -443,8 +524,8 @@
       </div>
       <ul>
         <li class="active">🚢 Shipping Data</li>
-        <li><a class="sidebar-nav-link" href="https://jeffanind.github.io/Appl-System-Dashboard">⬅ Back to
-            Dashboard</a></li>
+        <li><a class="sidebar-nav-link" href="https://jeffanind.github.io/Appl-System-Dashboard">⬅ Back to Dashboard</a>
+        </li>
       </ul>
       <div class="store"><strong>Visit Our Online Store</strong><a href="https://www.jeffan.com/" target="_blank"
           rel="noopener">🌐 Jeffan Store</a><a href="https://www.wayfair.com" target="_blank" rel="noopener">🌐
@@ -506,6 +587,18 @@
             </tbody>
           </table>
         </div>
+
+        <div class="pagination-bar" id="paginationBar">
+          <div class="page-size-control"><label for="pageSizeSelect">Tampilkan</label><select id="pageSizeSelect"
+              aria-label="Jumlah data per halaman">
+              <option value="10" selected>10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select><span>data per halaman</span></div>
+          <div class="pagination-info" id="paginationInfo">Menampilkan 0–0 dari 0 data</div>
+          <div class="pagination-buttons" id="paginationButtons" aria-label="Navigasi halaman"></div>
+        </div>
         <div class="footer-note">Mode pengguna: hanya melihat, mencari, refresh, dan mengunduh data yang sedang
           ditampilkan. Pengubahan data hanya dilakukan oleh administrator.</div>
         <div class="status" id="tableStatus" role="status"></div>
@@ -538,6 +631,8 @@
         {key: 'Payment Status', label: 'Payment Status', type: 'text'}, {key: 'Payment Date', label: 'Payment Date', type: 'date'}
       ];
       let records = [];
+      let currentPage = 1;
+      let pageSize = 10;
       const $ = id => document.getElementById(id);
       const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
       function setStatus(id, message, kind = '') {const el = $(id); el.textContent = message; el.className = 'status' + (kind ? ' ' + kind : '');}
@@ -577,21 +672,39 @@
       }
       function renderTable() {
         const shown = getVisibleRecords();
-        $('rowCount').textContent = `${shown.length} dari ${records.length} data`;
-        if (!shown.length) {
+        const total = shown.length;
+        const totalPages = Math.max(1, Math.ceil(total / pageSize));
+        currentPage = Math.min(Math.max(1, currentPage), totalPages);
+        const startIndex = (currentPage - 1) * pageSize;
+        const pageRecords = shown.slice(startIndex, startIndex + pageSize);
+        $('rowCount').textContent = `${total} dari ${records.length} data`;
+        if (!pageRecords.length) {
           $('tableBody').innerHTML = `<tr><td colspan="10" class="empty">${records.length ? 'Tidak ada data yang cocok dengan pencarian.' : 'Belum ada data yang tersedia.'}</td></tr>`;
-          return;
+        } else {
+          $('tableBody').innerHTML = pageRecords.map(record => `<tr>${fields.map(f => {
+            const val = record.data[f.key] ?? '';
+            if (f.key === 'Payment Status') {
+              const normalized = String(val).trim().toLowerCase();
+              const status = normalized === 'ok' ? 'Ok' : (normalized === 'queue' || normalized === 'queueue' || normalized === 'queque' ? 'Queue' : String(val || ''));
+              const statusClass = status === 'Ok' ? 'payment-status-ok' : (status === 'Queue' ? 'payment-status-queue' : '');
+              return `<td><span class="payment-status-select ${statusClass}">${esc(status)}</span></td>`;
+            }
+            return `<td>${esc(val)}</td>`;
+          }).join('')}</tr>`).join('');
         }
-        $('tableBody').innerHTML = shown.map(record => `<tr>${fields.map(f => {
-          const val = record.data[f.key] ?? '';
-          if (f.key === 'Payment Status') {
-            const normalized = String(val).trim().toLowerCase();
-            const status = normalized === 'ok' ? 'Ok' : (normalized === 'queue' || normalized === 'queueue' || normalized === 'queque' ? 'Queue' : String(val || ''));
-            const statusClass = status === 'Ok' ? 'payment-status-ok' : (status === 'Queue' ? 'payment-status-queue' : '');
-            return `<td><span class="payment-status-select ${statusClass}">${esc(status)}</span></td>`;
-          }
-          return `<td>${esc(val)}</td>`;
-        }).join('')}</tr>`).join('');
+        const first = total === 0 ? 0 : startIndex + 1;
+        const last = Math.min(startIndex + pageSize, total);
+        $('paginationInfo').textContent = `Menampilkan ${first}–${last} dari ${total} data`;
+        let controls = `<button class="page-btn" type="button" data-page="${currentPage - 1}" ${currentPage === 1 ? 'disabled' : ''}>‹ Sebelumnya</button>`;
+        const maxVisible = 5;
+        let pageStart = Math.max(1, currentPage - 2);
+        let pageEnd = Math.min(totalPages, pageStart + maxVisible - 1);
+        pageStart = Math.max(1, pageEnd - maxVisible + 1);
+        if (pageStart > 1) controls += `<button class="page-btn" type="button" data-page="1">1</button>${pageStart > 2 ? '<span>…</span>' : ''}`;
+        for (let page = pageStart; page <= pageEnd; page++) controls += `<button class="page-btn ${page === currentPage ? 'active' : ''}" type="button" data-page="${page}" ${page === currentPage ? 'aria-current="page"' : ''}>${page}</button>`;
+        if (pageEnd < totalPages) controls += `${pageEnd < totalPages - 1 ? '<span>…</span>' : ''}<button class="page-btn" type="button" data-page="${totalPages}">${totalPages}</button>`;
+        controls += `<button class="page-btn" type="button" data-page="${currentPage + 1}" ${currentPage === totalPages ? 'disabled' : ''}>Berikutnya ›</button>`;
+        $('paginationButtons').innerHTML = controls;
       }
       async function loadData() {
         $('refreshBtn').disabled = true;
@@ -642,10 +755,18 @@
         XLSX.writeFile(workbook, filename);
         setStatus('tableStatus', `Berhasil menyiapkan ${shown.length} baris data untuk Excel.`, 'success');
       });
-      $('searchInput').addEventListener('input', renderTable);
+      $('searchInput').addEventListener('input', () => {currentPage = 1; renderTable();});
       $('searchColumn').addEventListener('change', () => {
         const selected = $('searchColumn').value;
         $('searchInput').placeholder = `Cari berdasarkan ${selected}…`;
+        currentPage = 1;
+        renderTable();
+      });
+      $('pageSizeSelect').addEventListener('change', () => {pageSize = Number($('pageSizeSelect').value) || 10; currentPage = 1; renderTable();});
+      $('paginationButtons').addEventListener('click', (event) => {
+        const button = event.target.closest('button[data-page]');
+        if (!button || button.disabled) return;
+        currentPage = Number(button.dataset.page) || 1;
         renderTable();
       });
       $('refreshBtn').addEventListener('click', loadData);
