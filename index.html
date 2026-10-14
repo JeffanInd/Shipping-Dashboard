@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="id">
+
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERP Application System - Shipping Data</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+      :root {
+        --blue: #1a84f5;
+        --navy: #0f038f;
+        --green: #239709;
+        --ink: #182338;
+        --muted: #667085;
+        --line: #dce3ee;
+        --surface: #fff
+      }
+
+      * {
+        box-sizing: border-box
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Arial, Helvetica, sans-serif;
+        color: var(--ink);
+        background: url('https://www.jeffan.com/web-assets/images/landing/living-hero.jpg') center/cover fixed no-repeat
+      }
+
+      body:before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: rgba(255, 255, 255, .78);
+        z-index: -1
+      }
+
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 270px;
+        height: 100vh;
+        overflow-y: auto;
+        background: linear-gradient(180deg, #1a84f5 0%, #0f038f 100%);
+        color: #fff;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        text-align: center;
+        align-items: stretch;
+        box-shadow: 2px 0 8px #0002;
+        z-index: 5
+      }
+
+      .sidebar-logo {
+        width: 120px;
+        max-width: 100%;
+        margin: 10px auto 4px
+      }
+
+      .sidebar h2 {
+        font-size: 16px;
+        line-height: 1.25;
+        margin: 4px 0
+      }
+
+      .sidebar h3 {
+        font-size: 10px;
+        margin: 0;
+        color: #fff
+      }
+
+      .clock {
+        font-size: 12px;
+        line-height: 1.5;
+        margin: 8px 0 18px
+      }
+
+      .sidebar ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 7px
+      }
+
+      .sidebar li {
+        width: 100%;
+        padding: 11px 16px;
+        background: linear-gradient(130deg, #1a84f5 0%, #0f038f 100%);
+        color: white;
+        font-weight: 600;
+        border-radius: 10px;
+        cursor: pointer;
+        text-align: left;
+        transition: .2s
+      }
+
+      .sidebar li:hover,
+      .sidebar li.active {
+        background: #239709;
+        transform: translateX(3px)
+      }
+
+      .sidebar-nav-link {
+        display: block;
+        color: #fff;
+        text-decoration: none;
+        width: 100%;
+      }
+
+      .store {
+        margin-top: auto;
+        padding-top: 25px;
+        font-size: 12px
+      }
+
+      .store a {
+        display: block;
+        color: #fff;
+        margin: 9px 0;
+        text-decoration: none
+      }
+
+      .main {
+        margin-left: 270px;
+        padding: 28px;
+        min-width: 0
+      }
+
+      .page-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 20px
+      }
+
+      .page-heading h1 {
+        font-size: 25px;
+        margin: 0 0 6px
+      }
+
+      .subtitle {
+        color: var(--muted);
+        font-size: 13px
+      }
+
+      .panel {
+        background: rgba(255, 255, 255, .96);
+        border: 1px solid #e4e9f2;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 8px 28px #15284a12;
+        margin-bottom: 18px
+      }
+
+      .toolbar {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap
+      }
+
+      .btn {
+        border: 0;
+        border-radius: 9px;
+        padding: 10px 14px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: .15s
+      }
+
+      .btn:disabled {
+        opacity: .55;
+        cursor: not-allowed
+      }
+
+      .btn-primary {
+        color: white;
+        background: linear-gradient(130deg, var(--blue), var(--navy))
+      }
+
+      .btn-primary:hover {
+        filter: brightness(1.08)
+      }
+
+      .btn-light {
+        background: #eef4ff;
+        color: #173d86;
+        border: 1px solid #d5e3ff
+      }
+
+      .btn-delete {
+        background: #fff0f0;
+        color: #b42318;
+        border: 1px solid #ffd1d1;
+        padding: 7px 10px
+      }
+
+      .btn-delete:hover {
+        background: #ffe0e0
+      }
+
+      input[type=file] {
+        max-width: 100%;
+        font-size: 13px
+      }
+
+      .search {
+        width: min(320px, 100%);
+        padding: 10px 12px;
+        border: 1px solid #cfd8e6;
+        border-radius: 9px;
+        font-size: 13px;
+        background: white
+      }
+
+      .hint {
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.6;
+        margin: 12px 0 0
+      }
+
+      .status {
+        font-size: 13px;
+        margin-top: 12px;
+        color: #344054;
+        min-height: 18px
+      }
+
+      .status.error {
+        color: #b42318
+      }
+
+      .status.success {
+        color: #067647
+      }
+
+      .table-meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+        font-size: 13px;
+        color: #475467
+      }
+
+      .table-wrap {
+        width: 100%;
+        overflow: auto;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #fff
+      }
+
+      table {
+        border-collapse: separate;
+        border-spacing: 0;
+        width: 100%;
+        min-width: 1280px;
+        font-size: 13px
+      }
+
+      thead th {
+        position: sticky;
+        top: 0;
+        background: linear-gradient(180deg, #edf5ff, #e3edff);
+        color: #173d86;
+        text-align: left;
+        font-size: 12px;
+        letter-spacing: .02em;
+        padding: 13px 12px;
+        border-bottom: 1px solid #cddcf2;
+        white-space: nowrap;
+        z-index: 1
+      }
+
+      tbody td {
+        padding: 9px 10px;
+        border-bottom: 1px solid #edf0f5;
+        white-space: nowrap;
+        vertical-align: middle
+      }
+
+      tbody tr:last-child td {
+        border-bottom: 0
+      }
+
+      tbody tr:hover {
+        background: #f8fbff
+      }
+
+      tbody td input,
+      tbody td select {
+        font: inherit;
+        width: 100%;
+        min-width: 115px;
+        border: 1px solid transparent;
+        background: transparent;
+        border-radius: 6px;
+        padding: 7px 6px;
+        color: #182338
+      }
+
+      tbody td input:focus,
+      tbody td select:focus {
+        outline: 2px solid #8dbdff;
+        border-color: #80b6ff;
+        background: #fff
+      }
+
+      tbody td.editable {
+        min-width: 145px
+      }
+
+      tbody td.action-cell {
+        text-align: center;
+        min-width: 95px
+      }
+
+      .pill {
+        display: inline-block;
+        border-radius: 99px;
+        background: #eef4ff;
+        color: #214a91;
+        padding: 5px 9px;
+        font-size: 11px;
+        font-weight: 700
+      }
+
+      .empty {
+        padding: 38px 16px;
+        text-align: center;
+        color: #667085
+      }
+
+      .footer-note {
+        font-size: 11px;
+        color: #667085;
+        margin-top: 12px
+      }
+
+      .mobile-menu {
+        display: none
+      }
+
+      @media(max-width:850px) {
+        .sidebar {
+          width: 220px
+        }
+
+        .main {
+          margin-left: 220px;
+          padding: 18px
+        }
+
+        .sidebar li {
+          font-size: 14px;
+          padding: 10px
+        }
+
+        .page-heading h1 {
+          font-size: 22px
+        }
+      }
+
+      @media(max-width:620px) {
+        .sidebar {
+          position: relative;
+          width: 100%;
+          height: auto;
+          max-height: none
+        }
+
+        .sidebar ul {
+          display: grid;
+          grid-template-columns: 1fr 1fr
+        }
+
+        .store {
+          display: none
+        }
+
+        .main {
+          margin-left: 0;
+          padding: 14px
+        }
+
+        .panel {
+          padding: 13px
+        }
+
+        .page-heading h1 {
+          font-size: 20px
+        }
+
+        .toolbar>* {
+          flex: 1 1 100%
+        }
+
+        .search {
+          width: 100%
+        }
+      }
+
+      /* Payment Status color states */
+      table tbody td .payment-status-select,
+      table tbody td .payment-status-select.payment-status-ok {
+        background-color: #fee2e2 !important;
+        color: #b91c1c !important;
+        border: 1px solid #fca5a5 !important;
+        font-weight: 700 !important;
+      }
+
+      table tbody td .payment-status-select.payment-status-queue {
+        background-color: #dcfce7 !important;
+        color: #166534 !important;
+        border: 1px solid #86efac !important;
+        font-weight: 700 !important;
+      }
+    </style>
+  </head>
+
+  <body>
+    <aside class="sidebar">
+      <img src="https://www.jeffan.com/secure/extensions/Intente/Jeffan_21_1_0/21.1.0/img/jeffan-logo.png"
+        class="sidebar-logo" alt="Logo Jeffan">
+      <h2>ERP Application System</h2>
+      <h3>Update.Ver.03.VI.2026</h3>
+      <div class="clock">
+        <div id="clock-time">00:00:00</div>
+        <div id="clock-date">-</div>
+      </div>
+      <ul>
+        <li class="active">🚢 Shipping Data</li>
+        <li><a class="sidebar-nav-link" href="https://jeffanind.github.io/Appl-System-Dashboard/">⬅ Back to
+            Dashboard</a></li>
+      </ul>
+      <div class="store"><strong>Visit Our Online Store</strong><a href="https://www.jeffan.com/" target="_blank"
+          rel="noopener">🌐 Jeffan Store</a><a href="https://www.wayfair.com" target="_blank" rel="noopener">🌐
+          Wayfair</a><a href="https://s.id/atrisna" target="_blank" rel="noopener">👨‍💼 Administrator</a></div>
+    </aside>
+    <main class="main">
+      <div class="page-heading">
+        <div>
+          <h1>🚢 Shipping Data</h1>
+          <div class="subtitle">Tampilan data pengiriman · Pencarian dan download Excel</div>
+        </div><span class="pill" id="connectionPill">Menghubungkan Firebase…</span>
+      </div>
+
+      <section class="panel">
+        <div class="page-heading" style="margin-bottom:14px">
+          <div>
+            <h3 style="margin:0 0 5px">Daftar Shipping</h3>
+            <div class="subtitle">Data hanya dapat dilihat, dicari, dan diunduh. Gunakan pilihan kolom pencarian untuk
+              menampilkan data berdasarkan satu kolom saja.</div>
+          </div>
+        </div>
+        <div class="table-meta"><span id="rowCount">0 data</span>
+          <div class="toolbar"><button class="btn btn-light" id="refreshBtn" type="button">↻ Refresh
+              Data</button><button class="btn btn-primary" id="downloadExcelBtn" type="button">⬇ Download to
+              Excel</button><select id="searchColumn" class="search" aria-label="Pilih kolom pencarian">
+              <option value="Shipper">Shipper</option>
+              <option value="SO">SO</option>
+              <option value="Vendor">Vendor</option>
+              <option value="PO">PO</option>
+              <option value="Container Number">Container Number</option>
+              <option value="ECRD">ECRD</option>
+              <option value="ETD">ETD</option>
+              <option value="ETA">ETA</option>
+              <option value="Payment Status">Payment Status</option>
+              <option value="Payment Date">Payment Date</option>
+            </select><input id="searchInput" class="search" type="search" placeholder="Cari berdasarkan Shipper…"
+              aria-label="Cari berdasarkan kolom terpilih"></div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Shipper</th>
+                <th>SO</th>
+                <th>Vendor</th>
+                <th>PO</th>
+                <th>Container Number</th>
+                <th>ECRD</th>
+                <th>ETD</th>
+                <th>ETA</th>
+                <th>Payment Status</th>
+                <th>Payment Date</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody">
+              <tr>
+                <td colspan="10" class="empty">Memuat data…</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="footer-note">Mode pengguna: hanya melihat, mencari, refresh, dan mengunduh data yang sedang
+          ditampilkan. Pengubahan data hanya dilakukan oleh administrator.</div>
+        <div class="status" id="tableStatus" role="status"></div>
+      </section>
+    </main>
+    <script>
+      (function clock() {const now = new Date(); document.getElementById('clock-time').textContent = now.toLocaleTimeString('id-ID', {hour12: false}); document.getElementById('clock-date').textContent = now.toLocaleDateString('id-ID', {weekday: 'short', day: '2-digit', month: 'short', year: 'numeric'}); setTimeout(clock, 1000)})();
+    </script>
+    <script type="module">
+      import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+      import {getFirestore, collection, getDocs} from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+      // Konfigurasi Firebase mengikuti aplikasi utama yang diberikan.
+      const firebaseConfig = {
+        apiKey: 'AIzaSyAdjD2FiCU-uP5eo8JuKyP_Gc_QNGpAPK8',
+        authDomain: 'inspection-data-11f7d.firebaseapp.com',
+        projectId: 'inspection-data-11f7d',
+        storageBucket: 'inspection-data-11f7d.firebasestorage.app',
+        messagingSenderId: '1082215196163',
+        appId: '1:1082215196163:web:fdaa360881782ea3ad1036',
+        measurementId: 'G-KBV92YDP1K'
+      };
+      const COLLECTION_NAME = 'shippingData';
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+      const fields = [
+        {key: 'Shipper', label: 'Shipper'}, {key: 'SO', label: 'SO'}, {key: 'Vendor', label: 'Vendor'}, {key: 'PO', label: 'PO'},
+        {key: 'Container Number', label: 'Container Number'}, {key: 'ECRD', label: 'ECRD', type: 'date'},
+        {key: 'ETD', label: 'ETD', type: 'date'}, {key: 'ETA', label: 'ETA', type: 'date'},
+        {key: 'Payment Status', label: 'Payment Status', type: 'text'}, {key: 'Payment Date', label: 'Payment Date', type: 'date'}
+      ];
+      let records = [];
+      const $ = id => document.getElementById(id);
+      const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+      function setStatus(id, message, kind = '') {const el = $(id); el.textContent = message; el.className = 'status' + (kind ? ' ' + kind : '');}
+      function normalizeHeader(s) {return String(s ?? '').trim().toLowerCase().replace(/[_\s-]+/g, '').replace(/[^a-z0-9]/g, '');}
+      function toText(v) {
+        if (v === null || v === undefined) return '';
+        if (v instanceof Date && !isNaN(v)) return `${v.getMonth() + 1}/${v.getDate()}/${v.getFullYear()}`;
+        return String(v).trim();
+      }
+      function excelDateToText(value, cell) {
+        if (value === null || value === undefined || value === '') return '';
+        if (cell && cell.t === 'n' && (cell.z || '').match(/[dmy]/i)) {
+          const d = XLSX.SSF.parse_date_code(value); if (d) return `${d.m}/${d.d}/${d.y}`;
+        }
+        if (typeof value === 'number' && value > 20000 && value < 80000) {
+          const d = XLSX.SSF.parse_date_code(value); if (d) return `${d.m}/${d.d}/${d.y}`;
+        }
+        return toText(value);
+      }
+      function dateForInput(value) {
+        const s = String(value ?? '').trim();
+        if (!s) return '';
+        if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+        let m = s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
+        if (m) {
+          const mm = m[1].padStart(2, '0'), dd = m[2].padStart(2, '0'), yyyy = m[3];
+          return `${yyyy}-${mm}-${dd}`;
+        }
+        const d = new Date(s);
+        if (!Number.isNaN(d.getTime())) return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        return '';
+      }
+      function getVisibleRecords() {
+        const q = $('searchInput').value.trim().toLowerCase();
+        const selectedField = $('searchColumn').value || 'Shipper';
+        return records.filter(r => !q || String(r.data[selectedField] ?? '').toLowerCase().includes(q));
+      }
+      function renderTable() {
+        const shown = getVisibleRecords();
+        $('rowCount').textContent = `${shown.length} dari ${records.length} data`;
+        if (!shown.length) {
+          $('tableBody').innerHTML = `<tr><td colspan="10" class="empty">${records.length ? 'Tidak ada data yang cocok dengan pencarian.' : 'Belum ada data yang tersedia.'}</td></tr>`;
+          return;
+        }
+        $('tableBody').innerHTML = shown.map(record => `<tr>${fields.map(f => {
+          const val = record.data[f.key] ?? '';
+          if (f.key === 'Payment Status') {
+            const normalized = String(val).trim().toLowerCase();
+            const status = normalized === 'ok' ? 'Ok' : (normalized === 'queue' || normalized === 'queueue' || normalized === 'queque' ? 'Queue' : String(val || ''));
+            const statusClass = status === 'Ok' ? 'payment-status-ok' : (status === 'Queue' ? 'payment-status-queue' : '');
+            return `<td><span class="payment-status-select ${statusClass}">${esc(status)}</span></td>`;
+          }
+          return `<td>${esc(val)}</td>`;
+        }).join('')}</tr>`).join('');
+      }
+      async function loadData() {
+        $('refreshBtn').disabled = true;
+        try {
+          const snap = await getDocs(collection(db, COLLECTION_NAME));
+          records = snap.docs.map(d => ({id: d.id, data: d.data()}));
+          records.sort((a, b) => String(a.data.SO || '').localeCompare(String(b.data.SO || '')));
+          renderTable(); $('connectionPill').textContent = 'Firebase terhubung'; $('connectionPill').style.background = '#e8f7ee'; $('connectionPill').style.color = '#067647';
+          setStatus('tableStatus', 'Data berhasil dimuat.', 'success');
+        } catch (err) {
+          console.error(err); $('connectionPill').textContent = 'Koneksi bermasalah'; $('connectionPill').style.background = '#fff0f0'; $('connectionPill').style.color = '#b42318';
+          setStatus('tableStatus', `Gagal membaca Firestore: ${err.message}. Periksa konfigurasi dan Firestore Rules.`, 'error');
+          $('tableBody').innerHTML = '<tr><td colspan="10" class="empty">Data tidak dapat dimuat dari Firestore.</td></tr>';
+        } finally {$('refreshBtn').disabled = false;}
+      }
+      $('downloadExcelBtn').addEventListener('click', () => {
+        const shown = getVisibleRecords();
+        if (!shown.length) {
+          setStatus('tableStatus', 'Tidak ada data yang cocok untuk di-download.', 'error');
+          return;
+        }
+        if (!window.XLSX) {
+          setStatus('tableStatus', 'Library Excel tidak berhasil dimuat. Periksa koneksi internet.', 'error');
+          return;
+        }
+        const exportRows = shown.map(record => {
+          const row = {};
+          fields.forEach(field => {
+            let value = record.data[field.key] ?? '';
+            if (field.type === 'date' && value) {
+              const iso = dateForInput(value);
+              if (iso) {
+                const [yyyy, mm, dd] = iso.split('-');
+                value = `${mm}/${dd}/${yyyy}`;
+              }
+            }
+            row[field.label] = value;
+          });
+          return row;
+        });
+        const worksheet = XLSX.utils.json_to_sheet(exportRows, {header: fields.map(field => field.label)});
+        worksheet['!cols'] = [{wch: 16}, {wch: 14}, {wch: 20}, {wch: 18}, {wch: 22}, {wch: 14}, {wch: 14}, {wch: 14}, {wch: 18}, {wch: 16}];
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Shipping Data');
+        const searchTerm = $('searchInput').value.trim();
+        const safeTerm = searchTerm.replace(/[^a-z0-9_-]/gi, '_').slice(0, 30);
+        const filename = searchTerm ? `Shipping_Data_${safeTerm}.xlsx` : 'Shipping_Data.xlsx';
+        XLSX.writeFile(workbook, filename);
+        setStatus('tableStatus', `Berhasil menyiapkan ${shown.length} baris data untuk Excel.`, 'success');
+      });
+      $('searchInput').addEventListener('input', renderTable);
+      $('searchColumn').addEventListener('change', () => {
+        const selected = $('searchColumn').value;
+        $('searchInput').placeholder = `Cari berdasarkan ${selected}…`;
+        renderTable();
+      });
+      $('refreshBtn').addEventListener('click', loadData);
+      loadData();
+    </script>
+  </body>
+
+</html>
